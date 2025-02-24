@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  hashedPassword String?
+  username       String?   @unique
+  accounts       Account[]
+  sessions       Session[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  ownedGroups    Group[]        @relation("GroupOwner")
+  groupMemberships GroupMember[]
+  lostFoundItems  LostFoundItem[]
+  posts          Post[]
+  votes          Vote[]
+  comments       Comment[]
+  communities    Community[] @relation("CommunityMembers")
+  moderating     Community[] @relation("CommunityModerators")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Group {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  isPrivate   Boolean     @default(false)
+  image       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  ownerId     String
+  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id])
+  members     GroupMember[]
+
+  @@index([ownerId])
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  role      String   @default("MEMBER") // ADMIN or MEMBER
+  joinedAt  DateTime @default(now())
+  groupId   String
+  userId    String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model LostFoundItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String   // LOST or FOUND
+  location    String
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  status      String   @default("OPEN") // OPEN, CLOSED, RESOLVED
+
+  @@index([authorId])
+}
+
+model Post {
+  id          String      @id @default(cuid())
+  title       String
+  content     String      @db.Text
+  image       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  communityId String?
+  community   Community?  @relation(fields: [communityId], references: [id])
+  votes       Vote[]
+  comments    Comment[]
+  reported    Boolean     @default(false)
+  moderated   Boolean     @default(false)
+
+  @@index([authorId])
+  @@index([communityId])
+}
+
+model Community {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  posts       Post[]
+  members     User[]    @relation("CommunityMembers")
+  moderators  User[]    @relation("CommunityModerators")
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  value     Int      // 1 for upvote, -1 for downvote
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  authorId  String
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([postId])
+} 
