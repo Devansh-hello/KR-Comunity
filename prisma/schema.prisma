@@ -8,25 +8,31 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  hashedPassword String?
-  username       String?   @unique
-  accounts       Account[]
-  sessions       Session[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  ownedGroups    Group[]        @relation("GroupOwner")
+  id               String             @id @default(cuid())
+  username         String?            @unique
+  name             String?
+  email            String?            @unique
+  emailVerified    DateTime?
+  image            String?
+  role             UserRole           @default(USER)
+  hashedPassword   String?
+  posts            Post[]
+  events           Event[]            @relation("EventAuthor")
+  registrations    Registration[]
+  eventMembers     EventGroupMember[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  ownedGroups      Group[]            @relation("GroupOwner")
   groupMemberships GroupMember[]
-  lostFoundItems  LostFoundItem[]
-  posts          Post[]
-  votes          Vote[]
-  comments       Comment[]
-  communities    Community[] @relation("CommunityMembers")
-  moderating     Community[] @relation("CommunityModerators")
+  lostFoundItems   LostFoundItem[]
+  communities      CommunityMember[]
+  moderating       Community[]        @relation("CommunityModerators")
+  votes            Vote[]
+  comments         Comment[]
+  permissions      String[]           @default([]) // ["CREATE_EVENT", "DELETE_POST", etc.]
+  accounts         Account[]
+  sessions         Session[]
+  eventMessages    EventMessage[]
 }
 
 model Account {
@@ -65,28 +71,28 @@ model VerificationToken {
 }
 
 model Group {
-  id          String       @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String
-  isPrivate   Boolean     @default(false)
+  isPrivate   Boolean       @default(false)
   image       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   ownerId     String
-  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id])
+  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
 
   @@index([ownerId])
 }
 
 model GroupMember {
-  id        String   @id @default(cuid())
-  role      String   @default("MEMBER") // ADMIN or MEMBER
-  joinedAt  DateTime @default(now())
-  groupId   String
-  userId    String
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  role     String   @default("MEMBER") // ADMIN or MEMBER
+  joinedAt DateTime @default(now())
+  groupId  String
+  userId   String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
   @@index([groupId])
@@ -97,7 +103,7 @@ model LostFoundItem {
   id          String   @id @default(cuid())
   title       String
   description String
-  type        String   // LOST or FOUND
+  type        String // LOST or FOUND
   location    String
   image       String?
   createdAt   DateTime @default(now())
@@ -110,20 +116,21 @@ model LostFoundItem {
 }
 
 model Post {
-  id          String      @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
-  content     String      @db.Text
+  content     String     @db.Text
   image       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  upvotes     Int          @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   authorId    String
-  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   communityId String?
-  community   Community?  @relation(fields: [communityId], references: [id])
+  community   Community? @relation(fields: [communityId], references: [id])
   votes       Vote[]
   comments    Comment[]
-  reported    Boolean     @default(false)
-  moderated   Boolean     @default(false)
+  reported    Boolean    @default(false)
+  moderated   Boolean    @default(false)
 
   @@index([authorId])
   @@index([communityId])
@@ -131,17 +138,30 @@ model Post {
 
 model Community {
   id          String    @id @default(cuid())
-  name        String    @unique
+  name        String
   description String?
+  image       String?
   createdAt   DateTime  @default(now())
-  posts       Post[]
-  members     User[]    @relation("CommunityMembers")
+  members     CommunityMember[]
   moderators  User[]    @relation("CommunityModerators")
+  posts       Post[]
+}
+
+model CommunityMember {
+  id          String    @id @default(cuid())
+  userId      String
+  communityId String
+  role        String    @default("MEMBER")
+  joinedAt    DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  community   Community @relation(fields: [communityId], references: [id])
+
+  @@unique([userId, communityId])
 }
 
 model Vote {
   id        String   @id @default(cuid())
-  value     Int      // 1 for upvote, -1 for downvote
+  value     Int // 1 for upvote, -1 for downvote
   userId    String
   postId    String
   createdAt DateTime @default(now())
@@ -157,11 +177,89 @@ model Comment {
   id        String   @id @default(cuid())
   content   String
   createdAt DateTime @default(now())
-  authorId  String
+  post      Post     @relation(fields: [postId], references: [id])
   postId    String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
 
   @@index([authorId])
   @@index([postId])
-} 
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  title         String
+  content       String
+  category      String
+  capacity      Int
+  registered    Int            @default(0)
+  deadline      DateTime
+  location      String
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  author        User           @relation("EventAuthor", fields: [authorId], references: [id])
+  authorId      String
+  registrations Registration[]
+  group         EventGroup?
+}
+
+model Registration {
+  id          String    @id @default(cuid())
+  fullName    String
+  rollNo      String
+  createdAt   DateTime  @default(now())
+  checkedIn   Boolean   @default(false)
+  checkedInAt DateTime?
+  event       Event     @relation(fields: [eventId], references: [id])
+  eventId     String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+}
+
+model EventGroup {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime           @default(now())
+  event       Event              @relation(fields: [eventId], references: [id])
+  eventId     String             @unique
+  members     EventGroupMember[]
+  messages    EventMessage[]
+}
+
+model EventGroupMember {
+  id       String     @id @default(cuid())
+  userId   String
+  groupId  String
+  role     String     @default("MEMBER")
+  joinedAt DateTime   @default(now())
+  user     User       @relation(fields: [userId], references: [id])
+  group    EventGroup @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model EventMessage {
+  id        String     @id @default(cuid())
+  content   String
+  createdAt DateTime   @default(now())
+  groupId   String
+  userId    String
+  group     EventGroup @relation(fields: [groupId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+}
+
+enum EventCategory {
+  ACADEMIC
+  CULTURAL
+  SPORTS
+  TECHNICAL
+  OTHER
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}

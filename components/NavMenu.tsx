@@ -3,50 +3,136 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
+import { Menu, Home, FileText, Calendar, Users } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ModeToggle } from "@/components/ModeToggle"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function NavMenu() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container flex h-16 items-center px-4">
-        <Link href="/" className="font-bold text-xl gradient-text">
-          KRcommunity
+    <div className="flex items-center justify-between w-full">
+      {/* Logo and Desktop Navigation */}
+      <div className="flex items-center gap-6">
+        <Link href="/" className="block">
+          <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text">
+            KRcommunity
+          </h1>
         </Link>
-
-        <div className="flex items-center space-x-1 ml-6">
+        
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-4">
           <Link 
             href="/posts"
-            className={`nav-link ${pathname === "/posts" ? "bg-accent/20 text-accent" : "text-muted-foreground"}`}
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              pathname === "/posts" ? "text-primary" : "text-muted-foreground"
+            )}
           >
             Posts
           </Link>
           <Link 
             href="/events"
-            className={`nav-link ${pathname === "/events" ? "bg-accent/20 text-accent" : "text-muted-foreground"}`}
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              pathname === "/events" ? "text-primary" : "text-muted-foreground"
+            )}
           >
             Events
           </Link>
           <Link 
             href="/groups"
-            className={`nav-link ${pathname === "/groups" ? "bg-accent/20 text-accent" : "text-muted-foreground"}`}
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              pathname === "/groups" ? "text-primary" : "text-muted-foreground"
+            )}
           >
             Groups
           </Link>
-        </div>
+        </nav>
+      </div>
 
-        <div className="ml-auto flex items-center space-x-4">
-          <ThemeToggle />
-          
+      {/* Right Side: Mobile Menu, Theme Toggle, Auth */}
+      <div className="flex items-center gap-2">
+        {/* Mobile Menu */}
+        <Sheet>
+          <SheetTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon" className="h-10 w-10">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[80%] p-0">
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold">Menu</h2>
+              </div>
+              <nav className="flex-1 p-4 space-y-2">
+                <Link 
+                  href="/"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                >
+                  <Home className="h-5 w-5" />
+                  Home
+                </Link>
+                <Link 
+                  href="/posts"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                >
+                  <FileText className="h-5 w-5" />
+                  Posts
+                </Link>
+                <Link 
+                  href="/events"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                >
+                  <Calendar className="h-5 w-5" />
+                  Events
+                </Link>
+                <Link 
+                  href="/groups"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                >
+                  <Users className="h-5 w-5" />
+                  Groups
+                </Link>
+              </nav>
+              {session && (
+                <div className="p-4 border-t">
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage src={session.user?.image || ""} />
+                      <AvatarFallback>{session.user?.name?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium">{session.user?.name}</p>
+                      <p className="text-sm text-muted-foreground">{session.user?.email}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full mt-4"
+                    onClick={() => signOut()}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Desktop Actions */}
+        <div className="hidden md:flex items-center gap-2">
+          <ModeToggle />
           {status === "loading" ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : session ? (
@@ -54,18 +140,15 @@ export function NavMenu() {
               <Button asChild variant="gradient" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                 <Link href="/posts/create">Create Post</Link>
               </Button>
-              
               <DropdownMenu>
-                <DropdownMenuTrigger className="hover:opacity-80 transition-opacity">
-                  <Avatar className="ring-2 ring-accent/20">
+                <DropdownMenuTrigger>
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src={session.user?.image || ""} />
-                    <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                      {session.user?.name?.[0] || "U"}
-                    </AvatarFallback>
+                    <AvatarFallback>{session.user?.name?.[0]}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive">
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => signOut()}>
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -78,6 +161,6 @@ export function NavMenu() {
           )}
         </div>
       </div>
-    </nav>
+    </div>
   )
 } 

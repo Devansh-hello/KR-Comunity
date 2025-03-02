@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { metadata } from "./metadata"
 import { NavMenu } from "@/components/NavMenu"
-import { Providers } from "@/components/Providers"
+import { Providers } from "@/components/providers"
+import { ModeToggle } from "@/components/ModeToggle"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,11 +31,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className={cn(inter.className, "min-h-full bg-background")}>
+      <body className={cn("min-h-full bg-background antialiased")}>
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <NavMenu />
-            <main className="flex-1">{children}</main>
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="container flex h-14 md:h-16 items-center px-4">
+                <NavMenu />
+              </div>
+            </header>
+            <main className="flex-1 pb-16 md:pb-0">
+              {children}
+            </main>
           </div>
         </Providers>
       </body>

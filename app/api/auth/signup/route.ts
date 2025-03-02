@@ -4,44 +4,35 @@ import bcrypt from "bcryptjs"
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name, username } = await req.json()
+    const { email, password, name } = await req.json()
 
-    // Validate required fields
-    if (!email || !password || !name || !username) {
+    if (!email || !password || !name) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
       )
     }
 
-    // Check if email exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 400 }
-      )
+    // Generate base username from name
+    let baseUsername = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 15)
+    
+    // Check if username exists and append numbers until unique
+    let username = baseUsername
+    let counter = 1
+    while (true) {
+      const existing = await prisma.user.findUnique({
+        where: { username }
+      })
+      if (!existing) break
+      username = `${baseUsername}${counter}`
+      counter++
     }
 
-    // Check if username exists
-    const existingUsername = await prisma.user.findUnique({
-      where: { username },
-    })
-
-    if (existingUsername) {
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 400 }
-      )
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -59,12 +50,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       message: "Account created successfully",
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-      }
+      user
     })
 
   } catch (error) {

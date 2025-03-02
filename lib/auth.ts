@@ -71,4 +71,16 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
+}
+
+// Add to your existing session type
+interface Session {
+  user: {
+    id: string
+    email: string
+    name: string
+    role: "USER" | "ADMIN" | "MODERATOR"
+    permissions: string[]
+    // ... other fields
+  }
 } 

@@ -5,13 +5,21 @@ export default withAuth({
     authorized: ({ req, token }) => {
       const pathname = req.nextUrl.pathname
 
-      // Protect create routes
-      if (
-        pathname.startsWith('/groups/create') ||
-        pathname.startsWith('/lost-found/create') ||
-        pathname.startsWith('/events/create')
-      ) {
-        return !!token
+      // Protect admin routes
+      if (pathname.startsWith('/admin')) {
+        return token?.role === "ADMIN"
+      }
+
+      // Check event creation permission
+      if (pathname.startsWith('/events/create')) {
+        return token?.role === "ADMIN" || 
+               (token?.permissions as string[])?.includes("CREATE_EVENT")
+      }
+
+      // Check post deletion permission
+      if (pathname.includes('/delete')) {
+        return token?.role === "ADMIN" || 
+               (token?.permissions as string[])?.includes("DELETE_POST")
       }
 
       // Allow other routes
@@ -22,9 +30,9 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    '/groups/create',
-    '/lost-found/create',
+    '/admin/:path*',
     '/events/create',
-    '/profile',
+    '/posts/:path*/delete',
+    '/dashboard/:path*'
   ],
 } 
