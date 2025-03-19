@@ -209,12 +209,18 @@ model Registration {
   fullName    String
   rollNo      String
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   checkedIn   Boolean   @default(false)
   checkedInAt DateTime?
-  event       Event     @relation(fields: [eventId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId     String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
+
+  @@unique([eventId, userId])
+  @@unique([eventId, rollNo])
+  @@index([eventId])
+  @@index([userId])
 }
 
 model EventGroup {

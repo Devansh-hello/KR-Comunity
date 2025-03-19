@@ -3,7 +3,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Menu, Home, FileText, Calendar, Users } from "lucide-react"
+import { Menu, Home, FileText, Calendar, Users, LayoutDashboard, ShieldAlert, BellRing, Compass } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,12 +12,30 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// Extended User type to include role
+interface ExtendedUser {
+  name?: string | null;
+  email?: string | null; 
+  image?: string | null;
+  role?: string;
+  id?: string;
+}
+
+// Extended Session type
+interface ExtendedSession {
+  user?: ExtendedUser;
+  expires: string;
+}
+
 export function NavMenu() {
   const pathname = usePathname()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSession() as { data: ExtendedSession | null, status: string }
+  const isAdmin = session?.user?.role === "ADMIN"
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -35,7 +53,7 @@ export function NavMenu() {
             href="/posts"
             className={cn(
               "text-sm font-medium transition-colors hover:text-primary",
-              pathname === "/posts" ? "text-primary" : "text-muted-foreground"
+              pathname === "/posts" || pathname.startsWith("/posts/") ? "text-primary" : "text-muted-foreground"
             )}
           >
             Posts
@@ -44,7 +62,7 @@ export function NavMenu() {
             href="/events"
             className={cn(
               "text-sm font-medium transition-colors hover:text-primary",
-              pathname === "/events" ? "text-primary" : "text-muted-foreground"
+              pathname === "/events" || pathname.startsWith("/events/") ? "text-primary" : "text-muted-foreground"
             )}
           >
             Events
@@ -53,10 +71,19 @@ export function NavMenu() {
             href="/groups"
             className={cn(
               "text-sm font-medium transition-colors hover:text-primary",
-              pathname === "/groups" ? "text-primary" : "text-muted-foreground"
+              pathname === "/groups" || pathname.startsWith("/groups/") ? "text-primary" : "text-muted-foreground"
             )}
           >
             Groups
+          </Link>
+          <Link 
+            href="/lost-found"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              pathname === "/lost-found" || pathname.startsWith("/lost-found/") ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            Lost & Found
           </Link>
         </nav>
       </div>
@@ -104,6 +131,31 @@ export function NavMenu() {
                   <Users className="h-5 w-5" />
                   Groups
                 </Link>
+                <Link 
+                  href="/lost-found"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                >
+                  <Compass className="h-5 w-5" />
+                  Lost & Found
+                </Link>
+                {session && (
+                  <Link 
+                    href="/dashboard"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    Dashboard
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link 
+                    href="/admin"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"
+                  >
+                    <ShieldAlert className="h-5 w-5" />
+                    Admin
+                  </Link>
+                )}
               </nav>
               {session && (
                 <div className="p-4 border-t">
@@ -137,8 +189,8 @@ export function NavMenu() {
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : session ? (
             <>
-              <Button asChild variant="gradient" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                <Link href="/posts/create">Create Post</Link>
+              <Button asChild variant="default" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                <Link href="/posts/new">Create Post</Link>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger>
@@ -148,6 +200,19 @@ export function NavMenu() {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
                     Sign Out
                   </DropdownMenuItem>
@@ -155,7 +220,7 @@ export function NavMenu() {
               </DropdownMenu>
             </>
           ) : (
-            <Button asChild variant="gradient" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Button asChild variant="default" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
               <Link href="/signin">Sign In</Link>
             </Button>
           )}

@@ -21,6 +21,8 @@ import { metadata } from "./metadata"
 import { NavMenu } from "@/components/NavMenu"
 import { Providers } from "@/components/providers"
 import { ModeToggle } from "@/components/ModeToggle"
+import { AppLoading } from "@/components/ui/app-loading"
+import { Footer } from "@/components/ui/footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,9 +32,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-full bg-background antialiased")}>
         <Providers>
+          <AppLoading />
           <div className="flex min-h-screen flex-col">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="container flex h-14 md:h-16 items-center px-4">
@@ -42,6 +45,7 @@ export default function RootLayout({
             <main className="flex-1 pb-16 md:pb-0">
               {children}
             </main>
+            <Footer />
           </div>
         </Providers>
       </body>

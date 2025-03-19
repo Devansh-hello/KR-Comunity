@@ -144,3 +144,266 @@ body {
     @apply active:scale-95 transition-transform;
   }
 }
+
+/* Modern animation effects */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(var(--primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+
+@keyframes shine {
+  0% { background-position: -100%; }
+  100% { background-position: 200%; }
+}
+
+/* Modern lighting effects */
+.glow-text {
+  text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.6), 
+               0 0 20px rgba(var(--primary-rgb), 0.4),
+               0 0 30px rgba(var(--primary-rgb), 0.2);
+}
+
+.glow-border {
+  box-shadow: 0 0 5px rgba(var(--primary-rgb), 0.4),
+              0 0 10px rgba(var(--primary-rgb), 0.2);
+}
+
+.neon-border {
+  box-shadow: 0 0 2px #fff,
+              0 0 5px rgba(var(--primary-rgb), 0.7),
+              0 0 10px rgba(var(--primary-rgb), 0.5);
+}
+
+.shine-effect {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 15%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%
+  );
+  background-size: 200% 100%;
+  animation: shine 3s infinite linear;
+}
+
+/* Noise texture for depth */
+.noise-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* Modern page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-exit {
+  opacity: 1;
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 200ms, transform 200ms;
+}
+
+/* Smooth hover transitions */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 3D card effect */
+.card-3d {
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+/* Modern loading animations */
+.loader-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-dots div {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  animation: loaderDots 1.4s infinite ease-in-out both;
+}
+
+.loader-dots div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loader-dots div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loaderDots {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* RGB Gradient animation for borders */
+.rgb-border {
+  position: relative;
+  border-radius: inherit;
+}
+
+.rgb-border::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  background: linear-gradient(
+    45deg,
+    hsl(var(--primary) / 0.8),
+    #8b5cf6,
+    #3b82f6,
+    hsl(var(--primary) / 0.8)
+  );
+  background-size: 300% 300%;
+  animation: rgbGradient 6s linear infinite;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+@keyframes rgbGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Shimmer loading effect */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Soft hover highlight for interactive elements */
+.hover-highlight {
+  transition: all 0.2s ease;
+}
+
+.hover-highlight:hover {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+/* Define RGB variables for primary color */
+:root {
+  --primary-rgb: 121, 82, 179; /* Adjust based on your primary color */
+}
+
+/* Sticky elements for modern feel */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(10px);
+  z-index: 50;
+}
+
+/* Define animation keyframes for common transitions */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Add utility animation classes */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.5s ease-out;
+}

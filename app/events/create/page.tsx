@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ImageUpload } from "@/components/ui/image-upload"
+import { ImageUpload } from "@/components/ImageUpload"
 import {
   Select,
   SelectContent,
@@ -15,6 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
+
+const categories = [
+  { value: "ACADEMIC", label: "Academic" },
+  { value: "CULTURAL", label: "Cultural" },
+  { value: "SPORTS", label: "Sports" },
+  { value: "TECHNICAL", label: "Technical" },
+  { value: "OTHER", label: "Other" }
+]
 
 export default function CreateEventPage() {
   const router = useRouter()
@@ -31,17 +40,42 @@ export default function CreateEventPage() {
     image: "",
   })
 
+  // Debug session
+  useEffect(() => {
+    if (session) {
+      console.log("Session data:", JSON.stringify(session, null, 2))
+    }
+  }, [session])
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin?callbackUrl=/events/create")
+    }
+  }, [status, router])
+
   if (status === "loading") {
     return <div className="container py-8">Loading...</div>
   }
 
   if (status === "unauthenticated") {
-    router.push("/signin")
-    return null
+    return null // Let the useEffect handle redirection
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.title || !formData.content || !formData.category || 
+        !formData.capacity || !formData.deadline || !formData.location) {
+      setError("Please fill in all required fields")
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      })
+      return
+    }
+    
     setLoading(true)
     setError("")
 
@@ -58,12 +92,27 @@ export default function CreateEventPage() {
       const data = await response.json()
 
       if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Event created successfully",
+        })
         router.push("/events")
       } else {
         setError(data.error || "Failed to create event")
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create event",
+          variant: "destructive"
+        })
       }
     } catch (error) {
+      console.error("Error submitting form:", error)
       setError("Something went wrong")
+      toast({
+        title: "Error",
+        description: "Something went wrong while creating the event",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -102,22 +151,23 @@ export default function CreateEventPage() {
             </div>
 
             <div>
-              <Label htmlFor="category">Category</Label>
+              <Label>Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) =>
                   setFormData({ ...formData, category: value })
                 }
+                required
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ACADEMIC">Academic</SelectItem>
-                  <SelectItem value="CULTURAL">Cultural</SelectItem>
-                  <SelectItem value="SPORTS">Sports</SelectItem>
-                  <SelectItem value="TECHNICAL">Technical</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -127,7 +177,7 @@ export default function CreateEventPage() {
               <Input
                 id="capacity"
                 type="number"
-                value={formData.capacity}
+                value={formData.capacity || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, capacity: parseInt(e.target.value) })
                 }
@@ -165,10 +215,8 @@ export default function CreateEventPage() {
             <div>
               <Label>Event Image</Label>
               <ImageUpload
-                onImageSelect={(file) => {
-                  // Handle image upload and get URL
-                  setFormData({ ...formData, image: "URL_FROM_UPLOAD" })
-                }}
+                value={formData.image}
+                onChange={(url) => setFormData({ ...formData, image: url })}
               />
             </div>
 

@@ -6,6 +6,18 @@ import GithubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 
+// Extend the session user type to include id
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    }
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -57,14 +69,23 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.sub!
+      console.log("Session callback called with token:", token)
+      
+      if (session?.user && token.sub) {
+        session.user.id = token.sub
+        // Log the updated session
+        console.log("Updated session with user ID:", session)
+      } else {
+        console.warn("Missing user or token.sub in session callback:", { session, token })
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      console.log("JWT callback called:", { user, token, account })
+      
       if (user) {
         token.sub = user.id
+        console.log("JWT callback: Setting token.sub to user.id:", user.id)
       }
       return token
     }

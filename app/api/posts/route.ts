@@ -68,51 +68,49 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    )
-  }
-
   try {
-    const { title, content, image, communityId } = await req.json()
-
-    // Moderate the content
-    const moderationResult = await moderateContent({ title, content })
-    if (!moderationResult.safe) {
-      return NextResponse.json(
-        { error: "Content violates community guidelines" },
-        { status: 400 }
-      )
+    const body = await req.json();
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
     }
-
+    
+    // Find the user ID from the session email
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+    });
+    
+    if (!user) {
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
+      });
+    }
+    
+    // Create the post with author connected
     const post = await prisma.post.create({
       data: {
-        title,
-        content,
-        image,
-        communityId,
-        authorId: session.user.id,
-        moderated: true, // Content has been checked
-      },
-      include: {
+        title: body.title,
+        content: body.content,
+        image: body.image,
         author: {
-          select: {
-            name: true,
-            image: true,
-          },
-        },
+          connect: { id: user.id }
+        }
+        // Add communityId if needed
       },
-    })
-
-    return NextResponse.json(post)
+    });
+    
+    return new Response(JSON.stringify(post), {
+      status: 201,
+    });
   } catch (error) {
-    console.error("Error creating post:", error)
-    return NextResponse.json(
-      { error: "Failed to create post" },
-      { status: 500 }
-    )
+    console.error("Error creating post:", error);
+    return new Response(JSON.stringify({ error: "Failed to create post" }), {
+      status: 500,
+    });
   }
 } 

@@ -1,6 +1,7 @@
 "use client"
-import { SessionProvider } from "next-auth/react"
+import { SessionProvider } from "@/components/SessionProvider"
 import { ThemeProvider } from "next-themes"
+import { PageTransition } from "@/components/ui/page-transition"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="system"
         enableSystem
       >
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </ThemeProvider>
     </SessionProvider>
   )

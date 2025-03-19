@@ -1,50 +1,63 @@
-import { prisma } from "@/lib/prisma"
+import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { prisma } from "@/lib/prisma"
+import { Event } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
-import { NextResponse } from "next/server"
+
+interface ExtendedUser {
+  id: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+interface ExtendedSession {
+  user?: ExtendedUser
+  expires: string
+}
+
+type EventWithCount = Partial<Event> & {
+  _count: {
+    registrations: number
+  }
+}
 
 export async function GET() {
+  const session = await getServerSession(authOptions)
+  
+  // Check if user is authenticated
+  if (!session?.user) {
+    return NextResponse.json(
+      { message: "You must be logged in to view your events" },
+      { status: 401 }
+    )
+  }
+  
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
+    // Fetch events created by the user
     const events = await prisma.event.findMany({
-      where: { 
-        authorId: session.user.id 
-      },
+      where: { authorId: session.user.id },
       select: {
         id: true,
         title: true,
         capacity: true,
-        registered: true,
         deadline: true,
-        registrations: {
-          where: {
-            checkedIn: true
-          },
+        location: true,
+        _count: {
           select: {
-            id: true
+            registrations: true
           }
         }
       },
-      orderBy: { 
-        createdAt: "desc"
-      }
+      orderBy: { createdAt: 'desc' }
     })
-
-    return NextResponse.json(
-      events.map(event => ({
-        ...event,
-        checkedIn: event.registrations.length,
-        registrations: undefined
-      }))
-    )
+    
+    return NextResponse.json(events)
+    
   } catch (error) {
-    console.error("Failed to fetch events:", error)
+    console.error("Error fetching user events:", error)
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { message: "An error occurred while fetching your events" },
       { status: 500 }
     )
   }
