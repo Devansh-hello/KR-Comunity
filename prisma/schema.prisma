@@ -33,6 +33,7 @@ model User {
   accounts         Account[]
   sessions         Session[]
   eventMessages    EventMessage[]
+  channelMessages  ChannelMessage[]   // New relation for channel messages
 }
 
 model Account {
@@ -81,6 +82,7 @@ model Group {
   ownerId     String
   owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
+  channels    Channel[]     // New relation to channels
 
   @@index([ownerId])
 }
@@ -256,6 +258,70 @@ model EventMessage {
   user      User       @relation(fields: [userId], references: [id])
 }
 
+// New models for Discord-like functionality
+
+// Channel model - similar to Discord channels within a server
+model Channel {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  type        ChannelType      @default(TEXT)
+  groupId     String
+  group       Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  messages    ChannelMessage[]
+  isArchived  Boolean          @default(false)
+
+  @@unique([groupId, name])
+  @@index([groupId])
+}
+
+// Messages sent in channels
+model ChannelMessage {
+  id          String            @id @default(cuid())
+  content     String            @db.Text
+  channelId   String
+  channel     Channel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  isEdited    Boolean           @default(false)
+  attachments MessageAttachment[]
+  reactions   MessageReaction[]
+  
+  @@index([channelId])
+  @@index([authorId])
+}
+
+// Attachments for messages (images, documents)
+model MessageAttachment {
+  id        String         @id @default(cuid())
+  url       String
+  type      AttachmentType
+  name      String
+  size      Int
+  messageId String
+  message   ChannelMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@index([messageId])
+}
+
+// Reactions to messages (emoji reactions)
+model MessageReaction {
+  id        String         @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+  message   ChannelMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
 enum EventCategory {
   ACADEMIC
   CULTURAL
@@ -268,4 +334,18 @@ enum UserRole {
   USER
   ADMIN
   MODERATOR
+}
+
+// Enums
+enum ChannelType {
+  TEXT
+  ANNOUNCEMENT
+  VOICE
+}
+
+enum AttachmentType {
+  IMAGE
+  DOCUMENT
+  VIDEO
+  AUDIO
 }

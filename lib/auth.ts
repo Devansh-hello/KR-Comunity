@@ -24,6 +24,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
@@ -63,6 +70,7 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/signin',
+    error: '/auth/error',
   },
   session: {
     strategy: "jwt"
@@ -87,7 +95,31 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id
         console.log("JWT callback: Setting token.sub to user.id:", user.id)
       }
+      
+      // Add account information to debug
+      if (account) {
+        console.log("Account info in JWT callback:", account)
+      }
+      
       return token
+    },
+    async redirect({ url, baseUrl }) {
+      // Customize redirect behavior
+      console.log("Redirect callback:", { url, baseUrl })
+      
+      // If the URL starts with the base URL, it's safe to redirect
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      
+      // If it's an absolute URL but doesn't start with the base URL, 
+      // redirect to the homepage
+      if (url.startsWith("http")) {
+        return baseUrl;
+      }
+      
+      // Otherwise, redirect to the absolute path
+      return `${baseUrl}${url}`;
     }
   },
   secret: process.env.NEXTAUTH_SECRET,

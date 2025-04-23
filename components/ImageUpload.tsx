@@ -6,9 +6,11 @@ import { ImagePlus, X } from "lucide-react"
 interface ImageUploadProps {
   value: string
   onChange: (value: string) => void
+  disabled?: boolean
+  isCircle?: boolean
 }
 
-export function ImageUpload({ value, onChange }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, disabled = false, isCircle = false }: ImageUploadProps) {
   const [loading, setLoading] = useState(false)
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,13 +44,14 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         onChange={handleUpload}
         className="hidden"
         id="imageUpload"
+        disabled={disabled}
       />
       {value ? (
         <div className="relative">
           <img
             src={value}
             alt="Upload"
-            className="w-full h-[200px] object-cover rounded-lg"
+            className={`w-full h-[200px] object-cover ${isCircle ? 'rounded-full' : 'rounded-lg'}`}
           />
           <Button
             type="button"
@@ -56,6 +59,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
             size="icon"
             className="absolute top-2 right-2"
             onClick={() => onChange("")}
+            disabled={disabled}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -64,8 +68,8 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         <Button
           type="button"
           variant="outline"
-          className="w-full h-[200px]"
-          disabled={loading}
+          className={`w-full h-[200px] ${isCircle ? 'rounded-full' : ''}`}
+          disabled={loading || disabled}
           onClick={() => document.getElementById("imageUpload")?.click()}
         >
           <ImagePlus className="h-5 w-5 mr-2" />

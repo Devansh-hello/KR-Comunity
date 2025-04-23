@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useSearchParams } from "@/components/providers/client-search-params"
 
 export function AppLoading() {
   const pathname = usePathname()

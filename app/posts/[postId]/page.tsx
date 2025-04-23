@@ -5,8 +5,21 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowUp, ArrowDown, MessageSquare } from "lucide-react"
+import { 
+  ArrowUp, ArrowDown, MessageSquare, Edit, Trash2, AlertCircle
+} from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
 
 interface Comment {
   id: string
@@ -25,6 +38,7 @@ interface Post {
   image?: string
   createdAt: string
   author: {
+    id: string
     name: string
     image?: string
   }
@@ -47,6 +61,8 @@ export default function PostDetailPage({ params }: { params: { postId: string } 
   const [error, setError] = useState("")
   const [comment, setComment] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletingPost, setDeletingPost] = useState(false)
 
   useEffect(() => {
     fetchPost()
@@ -55,6 +71,13 @@ export default function PostDetailPage({ params }: { params: { postId: string } 
   const fetchPost = async () => {
     try {
       const response = await fetch(`/api/posts/${params.postId}`)
+      if (!response.ok) {
+        if (response.status === 404) {
+          router.push('/posts')
+          return
+        }
+        throw new Error('Failed to load post')
+      }
       const data = await response.json()
       setPost(data)
       setLoading(false)
@@ -111,6 +134,36 @@ export default function PostDetailPage({ params }: { params: { postId: string } 
     }
   }
 
+  const handleDelete = async () => {
+    if (!session) return
+    
+    setDeletingPost(true)
+    try {
+      const response = await fetch(`/api/posts/${params.postId}`, {
+        method: 'DELETE',
+      })
+      
+      if (response.ok) {
+        toast.success("Post deleted successfully")
+        router.push('/posts')
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Failed to delete post")
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error)
+      toast.error("Failed to delete post")
+    } finally {
+      setDeletingPost(false)
+      setDeleteDialogOpen(false)
+    }
+  }
+
+  // Check if current user is author or admin
+  const isAuthor = session?.user?.id === post?.author.id
+  const isAdmin = session?.user?.role === 'ADMIN'
+  const canEditDelete = isAuthor || isAdmin
+
   if (loading) return <div>Loading...</div>
   if (error) return <div>{error}</div>
   if (!post) return <div>Post not found</div>
@@ -142,18 +195,42 @@ export default function PostDetailPage({ params }: { params: { postId: string } 
           </div>
           
           <div className="flex-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              {post.community && (
-                <>
-                  <span className="font-medium text-primary">
-                    c/{post.community.name}
-                  </span>
-                  <span>•</span>
-                </>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {post.community && (
+                  <>
+                    <span className="font-medium text-primary">
+                      c/{post.community.name}
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
+                <span>Posted by {post.author.name}</span>
+                <span>•</span>
+                <span>{formatDistanceToNow(new Date(post.createdAt))} ago</span>
+              </div>
+              
+              {canEditDelete && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/posts/edit/${post.id}`)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               )}
-              <span>Posted by {post.author.name}</span>
-              <span>•</span>
-              <span>{formatDistanceToNow(new Date(post.createdAt))} ago</span>
             </div>
             
             <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
@@ -188,19 +265,48 @@ export default function PostDetailPage({ params }: { params: { postId: string } 
           )}
 
           <div className="space-y-4">
-            {post.comments.map((comment) => (
-              <Card key={comment.id} className="p-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <span>{comment.author.name}</span>
-                  <span>•</span>
-                  <span>{formatDistanceToNow(new Date(comment.createdAt))} ago</span>
-                </div>
-                <p>{comment.content}</p>
-              </Card>
-            ))}
+            {post.comments && post.comments.length > 0 ? (
+              post.comments.map((comment) => (
+                <Card key={comment.id} className="p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <span>{comment.author.name}</span>
+                    <span>•</span>
+                    <span>{formatDistanceToNow(new Date(comment.createdAt))} ago</span>
+                  </div>
+                  <p>{comment.content}</p>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center p-4 text-muted-foreground">
+                <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>No comments yet. Be the first to comment!</p>
+              </div>
+            )}
           </div>
         </div>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={deletingPost}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingPost ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 

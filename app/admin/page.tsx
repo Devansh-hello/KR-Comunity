@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -7,7 +8,8 @@ import { UserStats } from "@/components/admin/UserStats"
 import { ContentModeration } from "@/components/admin/ContentModeration"
 import { EventManagement } from "@/components/admin/EventManagement"
 import { UserManagement } from "@/components/admin/UserManagement"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useSearchParams } from "@/components/providers/client-search-params"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 // Extended User type to include role
@@ -35,7 +37,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     // If authentication status is known and user is not an admin, redirect to home
     if (status !== "loading" && (!session?.user || session.user.role !== "ADMIN")) {
-      router.push("/")
+       router.push("/")
     }
 
     // Set active tab based on URL parameter

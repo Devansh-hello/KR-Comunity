@@ -7,35 +7,43 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-interface Community {
+interface Group {
   id: string
   name: string
   description: string
-  memberCount: number
+  isPrivate: boolean
   image?: string
+  _count: {
+    members: number
+  }
+  members: {
+    userId: string
+    role: string
+  }[]
 }
 
 export function Communities() {
-  const [communities, setCommunities] = useState<Community[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    async function fetchCommunities() {
+    async function fetchGroups() {
       try {
-        const response = await fetch('/api/communities')
-        if (!response.ok) throw new Error("Failed to fetch communities")
+        const response = await fetch('/api/groups')
+        if (!response.ok) throw new Error("Failed to fetch groups")
         const data = await response.json()
-        setCommunities(data)
+        console.log("Fetched groups data:", data); // Debugging log
+        setGroups(data)
       } catch (error) {
-        console.error("Error fetching communities:", error)
-        setError("Failed to load communities")
+        console.error("Error fetching groups:", error)
+        setError("Failed to load groups")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCommunities()
+    fetchGroups()
   }, [])
 
   if (loading) {
@@ -44,7 +52,7 @@ export function Communities() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Communities</h2>
           <Button asChild variant="outline">
-            <Link href="/communities">View All</Link>
+            <Link href="/groups">View All</Link>
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -75,36 +83,36 @@ export function Communities() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Communities</h2>
         <Button asChild variant="outline">
-          <Link href="/communities">View All</Link>
+          <Link href="/groups">View All</Link>
         </Button>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {communities && communities.length > 0 ? (
-          communities.map((community, index) => (
+        {groups && groups.length > 0 ? (
+          groups.map((group, index) => (
             <motion.div
-              key={community.id}
+              key={group.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Link href={`/communities/${community.id}`}>
+              <Link href={`/groups/${group.id}`}>
                 <Card className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={community.image} />
-                        <AvatarFallback>{community.name[0]}</AvatarFallback>
+                        <AvatarImage src={group.image} />
+                        <AvatarFallback>{group.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-medium">{community.name}</h3>
+                        <h3 className="font-medium">{group.name}</h3>
                         <p className="text-sm text-muted-foreground">
                           <Users className="h-4 w-4 inline mr-1" />
-                          {community.memberCount} members
+                          {group._count?.members || group.members?.length || 0} members
                         </p>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {community.description}
+                      {group.description}
                     </p>
                   </CardContent>
                 </Card>

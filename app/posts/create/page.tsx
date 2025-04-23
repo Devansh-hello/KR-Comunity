@@ -81,13 +81,13 @@ export default function CreatePostPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
+              <Label htmlFor="content">Content (Optional)</Label>
               <Textarea
                 id="content"
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                required
                 className="min-h-[200px] resize-none"
+                placeholder="Share your thoughts..."
               />
             </div>
 
