@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { metadata } from "./metadata"
 import { NavMenu } from "@/components/NavMenu"
-import { Providers } from "@/components/providers"
+import { Providers } from "@/components/Providers"
 import { ModeToggle } from "@/components/ModeToggle"
 import { AppLoading } from "@/components/ui/app-loading"
 import { Footer } from "@/components/ui/footer"
